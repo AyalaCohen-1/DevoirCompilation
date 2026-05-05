@@ -37,19 +37,20 @@ Ast* creer_noeud_concat(Ast *gauche, Ast *droit){
     noeud->droit = droit;
     return noeud;
 }
-void ecrire_noeuds(Ast *n, FILE *f) {
+
+void ecrire_arbre(Ast *n, FILE *f) {
     if (n == NULL) return; 
 
     fprintf(f, "  \"%p\" [label=\"%c\"];\n", (void*)n, n->value);
-
+    
     if (n->gauche != NULL) {
         fprintf(f, "  \"%p\" -> \"%p\";\n", (void*)n, (void*)n->gauche);
-        ecrire_noeuds(n->gauche, f);
+        ecrire_arbre(n->gauche, f);
     }
 
     if (n->droit != NULL) {
         fprintf(f, "  \"%p\" -> \"%p\";\n", (void*)n, (void*)n->droit);
-        ecrire_noeuds(n->droit, f);
+        ecrire_arbre(n->droit, f);
     }
 }
 
@@ -58,7 +59,7 @@ void graphe_ast(Ast *arbre){
     
     FILE *f = fopen("ast.dot", "w");
     fprintf(f, "digraph AST {\n");
-    ecrire_noeuds(arbre, f);
+    ecrire_arbre(arbre, f);
     fprintf(f, "}\n");
     fclose(f);
 }
