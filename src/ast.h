@@ -5,14 +5,20 @@ typedef enum {
     AST_CHAR,    
     AST_UNION,   
     AST_CONCAT,
-    AST_STAR     
+    AST_ETOILE    
 } AstType;
 
 typedef struct Ast {
     AstType type;
     char value;           
     struct Ast *gauche;    
-    struct Ast *droit;   
+    struct Ast *droit;  
 } Ast;
+
+Ast* creer_noeud_char(char c); 
+Ast* creer_noeud_union(Ast *gauche, Ast *droit); 
+Ast* creer_noeud_concat(Ast *gauche, Ast *droit); 
+Ast* creer_noeud_etoile(Ast *fils); 
+void graphe_ast(Ast *arbre);
 
 #endif
