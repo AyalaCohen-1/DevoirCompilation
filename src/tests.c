@@ -1,29 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ast.h"
+#include "lecteur_exp.h"
 
 int main() {
-    printf("Debut du test de l'AST...\n");
+    // 1. L'expression à tester
+    char *expression = "(a|b)*c";
+    printf("Test de lecture de l'expression : %s\n", expression);
 
-    // 1. On crée les feuilles (les caractères 'a' et 'b')
-    Ast *noeud_a = creer_noeud_char('a');
-    Ast *noeud_b = creer_noeud_char('b');
+    // 2. On lance notre super lecteur !
+    Ast *racine = lire_expression(expression);
 
-    // 2. On crée le nœud Union (a|b) qui a pour fils gauche 'a' et fils droit 'b'
-    Ast *noeud_union = creer_noeud_union(noeud_a, noeud_b);
+    if (racine == NULL) {
+        printf("Erreur : l'arbre n'a pas pu etre construit.\n");
+        return 1;
+    }
 
-    // 3. On crée le nœud Etoile (a|b)* qui a pour fils unique (gauche) le nœud union
-    Ast *racine = creer_noeud_etoile(noeud_union);
-
-    // 4. On génère le fichier .dot
+    // 3. On génère le fichier Graphviz
     printf("Generation du fichier ast.dot...\n");
     graphe_ast(racine);
 
-    printf("Termine ! Regarde dans ton explorateur de fichiers.\n");
-
-    // (Optionnel pour l'instant si tu n'as pas encore fait la fonction liberer_ast, 
-    // mais c'est bien de le mettre plus tard pour faire propre)
-    // liberer_ast(racine);
+    printf("Termine ! Regarde ton fichier ast.dot.\n");
 
     return 0;
 }
