@@ -62,4 +62,5 @@ void graphe_ast(Ast *arbre){
     ecrire_arbre(arbre, f);
     fprintf(f, "}\n");
     fclose(f);
+    system("dot -Tpng ast.dot -o ast.png");
 }
