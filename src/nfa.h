@@ -17,7 +17,7 @@ typedef struct Nfa{
 Etat* creer_etat(int symbole, Etat *out1, Etat *out2);
 Nfa creer_nfa_char(char c);
 Nfa union_nfa(Nfa *a1, Nfa *a2);
-Nfa concat_nfa(Nfa *a1, Nfa *a2);
+Nfa concat_nfa(Nfa *gauche, Nfa *droit);
 Nfa etoile_nfa(Nfa *a);
 Nfa ast_to_nfa(Ast *arbre);
 void graphe_nfa(Nfa *automate);
