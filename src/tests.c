@@ -2,25 +2,27 @@
 #include <stdlib.h>
 #include "ast.h"
 #include "lecteur_exp.h"
+#include "nfa.h"
 
 int main() {
-    // 1. L'expression à tester
     char *expression = "(a|b)*c";
-    printf("Test de lecture de l'expression : %s\n", expression);
+    printf("1. Lecture de l'expression : %s\n", expression);
 
-    // 2. On lance notre super lecteur !
     Ast *racine = lire_expression(expression);
-
     if (racine == NULL) {
         printf("Erreur : l'arbre n'a pas pu etre construit.\n");
         return 1;
     }
 
-    // 3. On génère le fichier Graphviz
-    printf("Generation du fichier ast.dot...\n");
+    printf("2. Generation de l'AST...\n");
     graphe_ast(racine);
 
-    printf("Termine ! Regarde ton fichier ast.dot.\n");
+    printf("3. Transformation de l'AST en NFA (Thompson)...\n");
+    Nfa mon_automate = ast_to_nfa(racine);
+    
+    printf("4. Generation du fichier nfa.dot...\n");
+    graphe_nfa(&mon_automate);
 
+    printf("Termine ! Verifie tes fichiers .dot.\n");
     return 0;
 }

@@ -8,7 +8,7 @@ static int compteur_etats = 0;
 Etat* creer_etat(int symbole, Etat *out1, Etat *out2) {
     Etat *nouvel_etat = (Etat*)malloc(sizeof(Etat));
     if (nouvel_etat == NULL) {
-        printf("Erreur avec la creation d'un etat\n");
+        printf("Erreur avec la creation de l'etat\n");
         exit(1); 
     }
     nouvel_etat->symbole = symbole;
@@ -58,11 +58,60 @@ Nfa etoile_nfa(Nfa *a){
     return resultat;
 }
 
-Nfa Ast_to_nfa(Ast *arbre) {
+Nfa ast_to_nfa(Ast *arbre) {
     if (arbre ==NULL){
         Nfa automate_nul= {NULL,NULL};
         return automate_nul;
     }
+    switch(arbre->type){
+        case AST_CHAR:
+            return creer_nfa_char(arbre->value);
+        case AST_UNION:{
+            Nfa gauche = ast_to_nfa(arbre->gauche);
+            Nfa droit = ast_to_nfa(arbre->droit);
+            return union_nfa(&gauche, &droit);
+        }
+        case AST_CONCAT:{
+            Nfa gauche = ast_to_nfa(arbre->gauche);
+            Nfa droit = ast_to_nfa(arbre->droit);
+            return concat_nfa(&gauche, &droit);
+        }
+        case AST_ETOILE:{
+            Nfa fils = ast_to_nfa(arbre->gauche);
+            return etoile_nfa(&fils); 
+        }
+    }
     
+}
 
+static void parcours_nfa(FILE *f, Etat *etat, int *visites) {
+    if (etat == NULL || visites[etat->no] == 1) {
+        return;
+    }
+    visites[etat->no] = 1;
+    if (etat->out1 != NULL) {
+        if (etat->symbole == EPSILON) {
+            fprintf(f, "  %d -> %d [label=\"eps\"];\n", etat->no, etat->out1->no);
+        } else {
+            fprintf(f, "  %d -> %d [label=\"%c\"];\n", etat->no, etat->out1->no, etat->symbole);
+        }
+        parcours_nfa(f, etat->out1, visites);
+    }
+
+    if (etat->out2 != NULL) {
+        fprintf(f, "  %d -> %d [label=\"eps\"];\n", etat->no, etat->out2->no);
+        parcours_nfa(f, etat->out2, visites);
+    }
+}
+
+void graphe_nfa(Nfa *automate){
+    if (automate == NULL) return; 
+    FILE *f = fopen("nfa.dot", "w");
+    fprintf(f, "digraph NFA {\n");
+    fprintf(f, "  %d [shape=doublecircle];\n", automate->fin->no);
+    int visites[1000] = {0};
+    parcours_nfa(f, automate->debut, visites);
+    fprintf(f, "}\n");
+    fclose(f);
+    printf("Fichier nfa.dot genere avec succes !\n");
 }
