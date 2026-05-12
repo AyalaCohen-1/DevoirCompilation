@@ -5,7 +5,7 @@
 
 static int compteur_etats = 0;
 
-Etat* creer_etat(int symbole, Etat *out1, Etat *out2) {
+Etat* creer_etat(int symbole, Etat *out1, Etat *out2) { //un NFA fonctionne avec des etats et des transitions, la base c'est de creer les etats
     Etat *nouvel_etat = (Etat*)malloc(sizeof(Etat));
     if (nouvel_etat == NULL) {
         printf("Erreur avec la creation de l'etat\n");
@@ -19,13 +19,15 @@ Etat* creer_etat(int symbole, Etat *out1, Etat *out2) {
     return nouvel_etat;
 }
 
-Nfa creer_nfa_char(char c){
+Nfa creer_nfa_char(char c){//la on cree une sorte de "mini NFA" qu'on va relier a d'autres "blocs" pour construire le Nfa final
     Etat *etat_fin = creer_etat(EPSILON, NULL, NULL);
     Etat *etat_debut = creer_etat(c, etat_fin, NULL);
     Nfa bloc= {etat_debut, etat_fin};
     return bloc;
 }
 
+
+//on procede de meme pour les autres types de relations entre les etats en suivant l'algo de McNaughton, Yamada et Thompson
 Nfa concat_nfa(Nfa *gauche, Nfa *droit) {
     gauche->fin->symbole = EPSILON;
     gauche->fin->out1 = droit->debut;
@@ -47,7 +49,7 @@ Nfa union_nfa(Nfa *a1, Nfa *a2){
     return resultat;
 }
 
-Nfa etoile_nfa(Nfa *a){
+Nfa etoile_nfa(Nfa *a){ 
     Etat *etat_fin = creer_etat(EPSILON, NULL, NULL);   
     Etat *etat_debut = creer_etat(EPSILON, a->debut, etat_fin);
     a->fin->symbole = EPSILON;
@@ -58,12 +60,12 @@ Nfa etoile_nfa(Nfa *a){
     return resultat;
 }
 
-Nfa ast_to_nfa(Ast *arbre) {
+Nfa ast_to_nfa(Ast *arbre) {//au lieu de creer le Nfa a partir de l'expression reguliere on "convertit" l'ast.
     if (arbre ==NULL){
         Nfa automate_nul= {NULL,NULL};
         return automate_nul;
     }
-    switch(arbre->type){
+    switch(arbre->type){ //on definit la conversion a effectuer par raport au type de noeud
         case AST_CHAR:
             return creer_nfa_char(arbre->value);
         case AST_UNION:{
@@ -84,7 +86,7 @@ Nfa ast_to_nfa(Ast *arbre) {
     
 }
 
-static void parcours_nfa(FILE *f, Etat *etat, int *visites) {
+static void parcours_nfa(FILE *f, Etat *etat, int *visites) { //fonction pour parcourir l'automate de maniere recursive
     if (etat == NULL || visites[etat->no] == 1) {
         return;
     }
@@ -104,14 +106,14 @@ static void parcours_nfa(FILE *f, Etat *etat, int *visites) {
     }
 }
 
-void graphe_nfa(Nfa *automate){
+void graphe_nfa(Nfa *automate){//meme principe que dans ast.c
     if (automate == NULL) return; 
     FILE *f = fopen("nfa.dot", "w");
     fprintf(f, "digraph NFA {\n");
     fprintf(f, "  %d [shape=doublecircle];\n", automate->fin->no);
-    int visites[1000] = {0};
+    int visites[1000] = {0}; //fixe un nb de visites max pour eviter que ca continue infiniment (on suppose que 1000 ca suffit)
     parcours_nfa(f, automate->debut, visites);
     fprintf(f, "}\n");
     fclose(f);
-    printf("Fichier nfa.dot genere avec succes !\n");
+    system("dot -Tpng nfa.dot -o nfa.png"); //automatise la creation de l'image comme pour ast.h
 }

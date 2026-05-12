@@ -1,5 +1,6 @@
 #ifndef AST_H
 #define AST_H
+//les fichiers .h servent a annoncer en quelque sorte la forme que va prendre le code reel et les fonctions qui seront implementees. 
 
 typedef enum {
     AST_CHAR,    
