@@ -1,7 +1,7 @@
 #ifndef NFA_H
 #define NFA_H
 #include "ast.h"
-#define EPSILON -1
+#define EPSILON -1 // defini un caractere appelé epsilon qui a pour valeur -1
 
 typedef struct Etat {
     int no;
