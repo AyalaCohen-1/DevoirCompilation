@@ -117,3 +117,8 @@ void graphe_nfa(Nfa *automate){//meme principe que dans ast.c
     fclose(f);
     system("dot -Tpng nfa.dot -o nfa.png"); //automatise la creation de l'image comme pour ast.h
 }
+
+// rajoute plus tard pour dfa.c
+int get_nb_etats_total() {
+    return compteur_etats; 
+}

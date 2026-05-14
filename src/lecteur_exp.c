@@ -19,7 +19,6 @@ Ast* lire_expression(char* exp){
 
 static Ast* analyse_char(){
     char c = expression[position];
-
     if (c == '\0') {
         return NULL;
 }
@@ -40,26 +39,20 @@ return creer_noeud_char(c);
 }
 
 static Ast* analyse_etoile() {
-
     Ast* fils = analyse_char();
-
     if (fils == NULL) {
         return NULL;
     }
-
     char c = expression[position];
-
     if (c == '*') {
         position++;
         return creer_noeud_etoile(fils);
     }
-
     return fils;
 }
 
 static Ast* analyse_concat() {
     Ast* gauche = analyse_etoile();
-
     if (gauche == NULL) {
         return NULL;
     }
@@ -72,21 +65,16 @@ static Ast* analyse_concat() {
         Ast* droit = analyse_etoile();
         gauche = creer_noeud_concat(gauche, droit);
     }
-
     return gauche;
 }
 
 static Ast* analyse_union() {
     Ast* gauche = analyse_concat();
-
     if (gauche == NULL) {
         return NULL;
     }
-    
     while (1) {
-        char c = expression[position];
-
-        
+        char c = expression[position];   
         if (c == '|') {
             position++;
             Ast* droit = analyse_concat();

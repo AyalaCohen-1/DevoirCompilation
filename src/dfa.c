@@ -89,66 +89,51 @@ static Etat** creer_table_etats(Nfa *automate, int nb_etats_tot) {
 }
 
 Dfa nfa_to_dfa(Nfa *automate) {
-    
-    // ÉTAPE 1 : INITIALISATION
     Dfa resultat_dfa;
-    int nb_nfa = automate->nb_etats;
-    
-    // 1a. Crée l'annuaire grâce à l'outil préparatoire
+    int nb_etats= get_nb_etats_totals();
+    int nb_nfa = nb_etats;
     Etat **table_etats = creer_table_etats(automate, nb_nfa);
     
-    // 1b. Crée un grand tableau qui va stocker tous les Ensemble_etats du DFA créés.
-    // (On suppose qu'on n'aura pas plus de 1000 états dans le DFA final)
-    Ensemble_etats* liste_dfa[1000];
+    // On crée un grand tableau qui va stocker tous les ensembles d'etats du DFA créés.
+    int capacite_max = 2000;
+    Ensemble_etats **liste_dfa = (Ensemble_etats**) malloc(capacite_max * sizeof(Ensemble_etats*));
     int nb_dfa_crees = 0;   // Combien on en a créé au total
-    int index_traite = 0;   // Où on en est dans notre analyse
+    int index_traite = 0;   // Ou on en est dans notre analyse
+    int* depart_nfa= (int*)calloc(nb_etats, sizeof(int));
+    depart_nfa[automate->debut->no]=1;
+    int* tableau_init=eps_cloture(depart_nfa,nb_nfa, table_etats);
+    Ensemble_etats *premier_etat = creer_ensemble(0, nb_nfa);
+    liste_dfa[0]=premier_etat;
+    nb_dfa_crees++;
+    resultat_dfa.debut=liste_dfa[0];
 
-    // ÉTAPE 2 : LE TOUT PREMIER ÉTAT (L'état initial du DFA)
-    // 2a. Crée un tableau d'entiers 'depart_nfa' (rempli de 0)
-    // 2b. Mets un '1' dans la case correspondant au numéro de l'état initial du NFA (automate->debut->no)
-    // 2c. Appelle 'eps_cloture' sur ce 'depart_nfa'. Ça te donne le tableau de ton premier état DFA !
-    // 2d. Utilise ton usine 'creer_ensemble' pour fabriquer la boîte du premier état.
-    // 2e. Range cette boîte dans 'liste_dfa[0]' et augmente 'nb_dfa_crees' de 1.
-    // 2f. N'oublie pas de dire que ce premier état est le début de ton DFA : resultat_dfa.debut = liste_dfa[0];
-
-    // ÉTAPE 3 : LA BOUCLE D'ANALYSE (La construction des sous-ensembles)
-    char alphabet[2] = {'a', 'b'}; // Les lettres possibles
-
-    while (index_traite < nb_dfa_crees) {
-        
-        // On prend l'état qu'on doit analyser
+    while (index_traite < nb_dfa_crees) {//on cree ici tous les ensembles d'etats autres que l'etat initial
         Ensemble_etats *etat_courant = liste_dfa[index_traite];
-
-        // On va tester chaque lettre de l'alphabet (boucle for)
-        for (int l = 0; l < 2; l++) {
-            char lettre = alphabet[l];
-
-            // 3a. LE SAUT : Appelle 'transition' avec 'etat_courant->etats_nfa' et la 'lettre'
-            
-            // 3b. LA DIFFUSION : Appelle 'eps_cloture' sur le résultat du saut. 
-            // (Ceci est le tableau 'cible_finale' de destination)
-
-            // 3c. VÉRIFICATION DE SÉCURITÉ : Est-ce que 'cible_finale' est totalement vide (que des 0) ?
-            // (Si oui, l'état NFA crashait en lisant cette lettre. On ignore et on passe à la lettre suivante, avec 'continue;')
-
-            // 3d. GESTION DES DOUBLONS : Est-ce qu'un état avec ce tableau 'cible_finale' existe DÉJÀ dans 'liste_dfa' ?
-            // Fais une boucle sur tous les états déjà créés (de 0 à nb_dfa_crees). 
-            // Utilise 'tableaux_identiques' pour comparer.
-            // Si OUI : On récupère juste le pointeur de cet ancien état.
-            // Si NON : On crée un NOUVEL Ensemble_etats, on lui donne 'cible_finale', on le met dans 'liste_dfa', et on augmente 'nb_dfa_crees'.
-
-            // 3e. LA FLÈCHE (TransitionDFA) : Maintenant qu'on a le départ et l'arrivée, 
-            // crée une nouvelle structure 'TransitionDFA' (avec malloc), donne-lui la 'lettre' et l'état de destination,
-            // et attache-la à 'etat_courant->liste_transitions'.
-        }
-        
-        index_traite++; // On a fini avec cet état, on passe au suivant de la liste !
     }
-
-    // ÉTAPE 4 : FINALISATION DU DFA
-    // 4a. Mets 'nb_dfa_crees' dans 'resultat_dfa.nb_etats'.
-    // 4b. Copie ta 'liste_dfa' dans 'resultat_dfa.liste_etats' (il faudra un malloc pour ce tableau de pointeurs).
-    // 4c. Parcours tous tes états DFA créés. Si la case numéro 'automate->fin->no' est à 1 dans leur tableau, alors ce sont des états finaux (est_final = 1).
-
     return resultat_dfa;
+}
+
+void graphe_dfa(Dfa *automate){//fonction de representation graphique du dfa 
+    if (automate == NULL) return; 
+    FILE *f = fopen("dfa.dot", "w");
+    fprintf(f, "digraph DFA {\n");
+    for (int i = 0; i < automate->nb_etats; i++) {
+        Ensemble_etats *etat = automate->liste_etats[i];
+        if (etat->est_final == 1) { // Si c'est un état final, on met un double cercle 
+            fprintf(f, "  %d [shape=doublecircle];\n", etat->no);
+        } else {
+            fprintf(f, "  %d [shape=circle];\n", etat->no);
+        }
+    }
+    for (int i = 0; i < automate->nb_etats; i++) {
+        Ensemble_etats *etat = automate->liste_etats[i];
+        TransitionDFA *trans = etat->liste_transitions;
+        while (trans != NULL) {
+            fprintf(f, "  %d -> %d [label=\"%c\"];\n", etat->no, trans->destination->no, trans->lettre);
+            trans = trans->suivante;
+        }
+    }
+    fprintf(f, "}\n");
+    fclose(f);
+    system("dot -Tpng dfa.dot -o dfa.png"); //automatise la creation de l'image comme pour ast.h et nfa.h
 }
