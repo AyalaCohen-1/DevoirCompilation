@@ -21,6 +21,6 @@ Nfa concat_nfa(Nfa *gauche, Nfa *droit);
 Nfa etoile_nfa(Nfa *a);
 Nfa ast_to_nfa(Ast *arbre);
 void graphe_nfa(Nfa *automate);
-int get_nb_etats_totals()
+
 
 #endif 

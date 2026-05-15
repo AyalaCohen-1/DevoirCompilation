@@ -5,6 +5,8 @@
 
 static int position=0;
 static char* expression;
+char alphabet[256]; //les 256 caracteres de l'ascii
+int taille_alphabet = 0;
 
 static Ast* analyse_char();
 static Ast* analyse_etoile();
@@ -29,8 +31,19 @@ if (c == '(') {
         if (expression[position] == ')') {
             position++; // On saute la ')'
         } else {
-            printf("Erreur: parenthèse fermante manquante !\n");
+            printf("Erreur: parenthèse manquante !\n");
         }
+    int existe_deja = 0;
+    for (int i = 0; i < taille_alphabet; i++) {
+        if (alphabet[i] == c) {
+            existe_deja = 1; // On l'a trouvée !
+            break;
+        }
+    }
+    if (existe_deja == 0) {
+        alphabet[taille_alphabet] = c;
+        taille_alphabet++;
+    }//sert pour la suite a connaitre le nombre de caracteres de l'alphabet en jeu
         return noeud_interieur;
 }
 

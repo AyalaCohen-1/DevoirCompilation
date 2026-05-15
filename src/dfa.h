@@ -24,8 +24,8 @@ int nb_etats;
 }Dfa;
 
 //on definit les fonctions importantes de cette conversion, d'abors les deux citees dans le cours qui implementent les principes de la conversion puis la fonction de conversion et celle de representation
-int* eps_cloture(int* ensemble_depart, int nb_etats_nfa_tot, Nfa *automate);
-int* transition(int *ensemble_depart, char lettre, int nb_etats_nfa_tot, Nfa *automate);
+int* eps_cloture(int* ensemble_depart, int nb_etats_nfa_tot, Etat **table_etats);
+int* transition(int *ensemble_depart, char lettre, int nb_etats_nfa_tot, Etat **table_etats);
 Dfa nfa_to_dfa(Nfa *automate);
 void graphe_dfa(Dfa *automate);
 

@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+extern int compteur_etats;      // Vient de nfa.c
+extern int taille_alphabet;     // Vient de lecteur_exp.c
+extern char alphabet[256];      // Vient de lecteur_exp.c
+//ces 3 variables vont servir plus tard pour creer un dfa avec les caracteres et etats propres au nfa
+
 static Ensemble_etats* creer_ensemble(int numero, int nb_total_nfa) {
     Ensemble_etats *nouvel_ensemble = (Ensemble_etats*) malloc(sizeof(Ensemble_etats));
     if (nouvel_ensemble == NULL) {
@@ -73,7 +78,7 @@ static int tableaux_identiques(int *tab1, int *tab2, int taille) {
     return 1;
 }
 
-// une autre une fonction récursive qui defini comment on va remplir la table d'etats du nfa
+// autre fonction récursive qui defini comment on va remplir la table d'etats du nfa
 static void remplir_table(Etat *courant, Etat **table) {
     if (courant == NULL || table[courant->no] != NULL) return;
     table[courant->no] = courant; // On enregistre l'état dans la case de son numéro
@@ -90,29 +95,88 @@ static Etat** creer_table_etats(Nfa *automate, int nb_etats_tot) {
 
 Dfa nfa_to_dfa(Nfa *automate) {
     Dfa resultat_dfa;
-    int nb_etats= get_nb_etats_totals();
-    int nb_nfa = nb_etats;
-    Etat **table_etats = creer_table_etats(automate, nb_nfa);
-    
-    // On crée un grand tableau qui va stocker tous les ensembles d'etats du DFA créés.
-    int capacite_max = 2000;
-    Ensemble_etats **liste_dfa = (Ensemble_etats**) malloc(capacite_max * sizeof(Ensemble_etats*));
-    int nb_dfa_crees = 0;   // Combien on en a créé au total
-    int index_traite = 0;   // Ou on en est dans notre analyse
-    int* depart_nfa= (int*)calloc(nb_etats, sizeof(int));
-    depart_nfa[automate->debut->no]=1;
-    int* tableau_init=eps_cloture(depart_nfa,nb_nfa, table_etats);
-    Ensemble_etats *premier_etat = creer_ensemble(0, nb_nfa);
-    liste_dfa[0]=premier_etat;
-    nb_dfa_crees++;
-    resultat_dfa.debut=liste_dfa[0];
+    resultat_dfa.nb_etats = 0;
+    // creation tableau assez grand pour stocker les états
+    resultat_dfa.liste_etats = (Ensemble_etats**)malloc(1000 * sizeof(Ensemble_etats*));
 
-    while (index_traite < nb_dfa_crees) {//on cree ici tous les ensembles d'etats autres que l'etat initial
-        Ensemble_etats *etat_courant = liste_dfa[index_traite];
+    int nb_nfa = compteur_etats;
+    Etat **table_nfa = creer_table_etats(automate, nb_nfa);
+
+    int *depart_nfa = (int*)calloc(nb_nfa, sizeof(int));
+    depart_nfa[automate->debut->no] = 1; 
+    int *etats_initiaux_dfa = eps_cloture(depart_nfa, nb_nfa, table_nfa);
+    
+    Ensemble_etats *premier_etat = creer_ensemble(resultat_dfa.nb_etats, nb_nfa);
+    for(int i = 0; i < nb_nfa; i++) {
+        premier_etat->etats_nfa[i] = etats_initiaux_dfa[i];
     }
+    resultat_dfa.liste_etats[resultat_dfa.nb_etats] = premier_etat;
+    resultat_dfa.debut = premier_etat;
+    resultat_dfa.nb_etats++;
+
+    int nb_lettres = taille_alphabet;
+    int index_non_traite = 0;
+
+    while (index_non_traite < resultat_dfa.nb_etats) {
+        Ensemble_etats *etat_courant = resultat_dfa.liste_etats[index_non_traite];
+
+        // On teste chaque lettre de l'alphabet pour en determiner les transitions comme pour la table Dtrans
+        for (int i = 0; i < nb_lettres; i++) {
+            char lettre = alphabet[i];
+
+            int *trans = transition(etat_courant->etats_nfa, lettre, nb_nfa, table_nfa);
+            int *nouveau_tableau_etat = eps_cloture(trans, nb_nfa, table_nfa);
+
+            int est_vide = 1;
+            for(int j = 0; j < nb_nfa; j++) {
+                if(nouveau_tableau_etat[j] == 1) est_vide = 0;
+            }
+
+            if (!est_vide) {
+                int index_existant = -1;
+                for (int k = 0; k < resultat_dfa.nb_etats; k++) {
+                    if (tableaux_identiques(nouveau_tableau_etat, resultat_dfa.liste_etats[k]->etats_nfa, nb_nfa)) {
+                        index_existant = k;
+                        break;
+                    }
+                }
+
+                Ensemble_etats *etat_cible;
+
+                // Si l'etat qu'on veut creer n'existe pas encore on le cree
+                if (index_existant == -1) {
+                    etat_cible = creer_ensemble(resultat_dfa.nb_etats, nb_nfa);
+                    for(int j = 0; j < nb_nfa; j++) {
+                        etat_cible->etats_nfa[j] = nouveau_tableau_etat[j];
+                    }
+                    resultat_dfa.liste_etats[resultat_dfa.nb_etats] = etat_cible;
+                    resultat_dfa.nb_etats++;
+                } else {
+                    etat_cible = resultat_dfa.liste_etats[index_existant];
+                }
+                TransitionDFA *nouvelle_trans = (TransitionDFA*)malloc(sizeof(TransitionDFA));
+                nouvelle_trans->lettre = lettre;
+                nouvelle_trans->destination = etat_cible;
+                nouvelle_trans->suivante = etat_courant->liste_transitions;
+                etat_courant->liste_transitions = nouvelle_trans;
+            }
+            free(trans);
+            free(nouveau_tableau_etat);
+        }
+        index_non_traite++;
+    }
+    // on verifie quels etats son finaux: un état est final s'il contient l'état final du NFA
+    int etat_final_nfa = automate->fin->no;
+    for (int i = 0; i < resultat_dfa.nb_etats; i++) {
+        if (resultat_dfa.liste_etats[i]->etats_nfa[etat_final_nfa] == 1) {
+            resultat_dfa.liste_etats[i]->est_final = 1;
+        }
+    }
+    free(depart_nfa);//si on ne libere pas les variables le code ne fonctionnera pas
+    free(etats_initiaux_dfa);
+    free(table_nfa);
     return resultat_dfa;
 }
-
 void graphe_dfa(Dfa *automate){//fonction de representation graphique du dfa 
     if (automate == NULL) return; 
     FILE *f = fopen("dfa.dot", "w");

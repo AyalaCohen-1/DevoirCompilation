@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int compteur_etats = 0;
+int compteur_etats = 0;//pour pouvoir numeroter les etats petit a petit
 
 Etat* creer_etat(int symbole, Etat *out1, Etat *out2) { //un NFA fonctionne avec des etats et des transitions, la base c'est de creer les etats
     Etat *nouvel_etat = (Etat*)malloc(sizeof(Etat));
@@ -82,6 +82,9 @@ Nfa ast_to_nfa(Ast *arbre) {//au lieu de creer le Nfa a partir de l'expression r
             Nfa fils = ast_to_nfa(arbre->gauche);
             return etoile_nfa(&fils); 
         }
+        default: 
+            printf("Erreur AST\n");
+            exit(1);
     }
     
 }
@@ -116,9 +119,4 @@ void graphe_nfa(Nfa *automate){//meme principe que dans ast.c
     fprintf(f, "}\n");
     fclose(f);
     system("dot -Tpng nfa.dot -o nfa.png"); //automatise la creation de l'image comme pour ast.h
-}
-
-// rajoute plus tard pour dfa.c
-int get_nb_etats_total() {
-    return compteur_etats; 
 }
