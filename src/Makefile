@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -g
 
 EXEC = gal
 
-SRC = main.c ast.c nfa.c dfa.c lecteur_exp.c
+SRC = main.c ast.c nfa.c dfa.c lecteur_exp.c minimisation_dfa.c generateur.c
 
 OBJ = $(SRC:.c=.o)
 
