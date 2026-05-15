@@ -71,7 +71,7 @@ Dfa dfa_minimal(Dfa *automate) { //fonction qui va creer le dfa min a partir de 
             }
         }
         
-        if (next_id > nb_groupes) { // Si on a créé de nouveaux groupes, on recommence un tour
+        if (next_id > nb_groupes) { // Si on a créé de nouveaux groupes, on recommence
             changement = 1;
             nb_groupes = next_id;
             for (int i = 0; i < n; i++) groupe[i] = nouveau_groupe[i];
