@@ -177,6 +177,7 @@ Dfa nfa_to_dfa(Nfa *automate) {
     free(table_nfa);
     return resultat_dfa;
 }
+
 void graphe_dfa(Dfa *automate){//fonction de representation graphique du dfa 
     if (automate == NULL) return; 
     FILE *f = fopen("dfa.dot", "w");
